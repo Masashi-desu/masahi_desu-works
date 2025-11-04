@@ -11,7 +11,7 @@ const { chromium } = require('playwright');
 
 const ROOT = path.resolve(__dirname, '../../');
 const PORT = 3015;
-const PAGE_URL = `http://127.0.0.1:${PORT}/products/products.html`;
+const PAGE_URL = `http://127.0.0.1:${PORT}/products/index.html`;
 const EXPECTED_RGB = { r: 253, g: 139, b: 44 };
 
 function serveStatic(req, res) {

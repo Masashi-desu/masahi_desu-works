@@ -56,7 +56,7 @@ async function collectPageEntries() {
   try {
     const productEntries = await fs.readdir(productsDir, { withFileTypes: true });
     for (const entry of productEntries) {
-      if (entry.isFile() && entry.name === 'products.html') {
+      if (entry.isFile() && entry.name === 'index.html') {
         await pushEntry('products', path.join(productsDir, entry.name));
       }
       if (entry.isDirectory()) {
