@@ -249,12 +249,16 @@
           if (hasMedia) {
             const mediaWrapper = document.createElement('div');
             mediaWrapper.className = 'relative mb-4 h-40 w-full overflow-hidden rounded-2xl border border-white/10';
+            mediaWrapper.dataset.mdwMedia = 'true';
+            const observedImages = [];
 
             if (hasHeader) {
               const headerImg = document.createElement('img');
               headerImg.src = `${item.dir}${headerPath}`;
               headerImg.alt = `${baseTitle} header image`;
               headerImg.className = 'absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105';
+              headerImg.loading = 'lazy';
+              observedImages.push(headerImg);
               mediaWrapper.appendChild(headerImg);
             } else {
               const placeholder = document.createElement('div');
@@ -266,8 +270,14 @@
               const iconBadge = document.createElement('div');
               iconBadge.className = 'absolute bottom-4 left-4 flex h-16 w-16 items-center justify-center rounded-2xl border border-white/20 bg-transparent p-2 shadow-[0_12px_30px_rgba(15,23,42,0.45)] backdrop-blur-lg transition duration-300';
               icon.className = 'h-12 w-12 rounded-xl object-cover';
+              icon.loading = 'lazy';
+              observedImages.push(icon);
               iconBadge.appendChild(icon);
               mediaWrapper.appendChild(iconBadge);
+            }
+
+            if (observedImages.length > 0 && window.MDWMediaLoader && typeof window.MDWMediaLoader.attach === 'function') {
+              window.MDWMediaLoader.attach(mediaWrapper, { targets: observedImages });
             }
 
             link.appendChild(mediaWrapper);

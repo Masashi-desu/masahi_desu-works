@@ -22,6 +22,69 @@ body {
   transition: background-color 0.35s ease, color 0.35s ease;
 }
 
+[data-mdw-media] {
+  position: relative;
+}
+
+[data-mdw-media] img {
+  transition: opacity 320ms ease, transform 360ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+.mdw-media-spinner {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(14px);
+  transition: opacity 200ms ease, visibility 200ms ease;
+  pointer-events: none;
+  z-index: 20;
+  opacity: 1;
+  visibility: visible;
+}
+
+.mdw-media-spinner.is-hidden {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.mdw-media-spinner::after {
+  content: '';
+  position: absolute;
+  inset: -28%;
+  background: linear-gradient(120deg,
+      rgba(56, 249, 215, 0) 0%,
+      rgba(56, 249, 215, 0.08) 18%,
+      rgba(255, 255, 255, 0.35) 40%,
+      rgba(56, 249, 215, 0.2) 58%,
+      rgba(56, 249, 215, 0) 85%);
+  filter: blur(24px);
+  opacity: 0.9;
+  transform: translateX(-120%) skewX(-10deg);
+  animation: mdw-veil 1.6s linear infinite;
+  will-change: transform;
+}
+
+@keyframes mdw-veil {
+  from {
+    transform: translateX(-120%) skewX(-10deg);
+  }
+  to {
+    transform: translateX(120%) skewX(-10deg);
+  }
+}
+
+.mdw-media-transition {
+  opacity: 0;
+  transform: scale(0.985);
+}
+
+.mdw-media-transition.mdw-media-transition-visible {
+  opacity: 1;
+  transform: scale(1);
+}
+
 [data-i18n],
 [data-lang-sensitive] {
   transition: opacity var(--lang-transition-duration) ease;

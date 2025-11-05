@@ -718,6 +718,191 @@
   });
 })();
 
+// メディア読み込み中のスピナーを共通で制御するモジュール
+(function () {
+  const CLASS_SPINNER = 'mdw-media-spinner';
+  const CLASS_HIDDEN = 'is-hidden';
+  const CLASS_TRANSITION = 'mdw-media-transition';
+  const CLASS_VISIBLE = 'mdw-media-transition-visible';
+  const DATA_READY = 'mdwMediaReady';
+  const SPINNER_DELAY = 120;
+
+  function createSpinner() {
+    const spinner = document.createElement('div');
+    spinner.className = `${CLASS_SPINNER} ${CLASS_HIDDEN}`;
+    spinner.setAttribute('role', 'status');
+    spinner.setAttribute('aria-live', 'polite');
+    spinner.setAttribute('aria-label', 'loading');
+    spinner.innerHTML = '';
+    return spinner;
+  }
+
+  function ensureSpinner(container) {
+    let spinner = container.querySelector(`.${CLASS_SPINNER}`);
+    if (!spinner) {
+      spinner = createSpinner();
+      container.appendChild(spinner);
+      const delayId = window.setTimeout(() => {
+        if (spinner.dataset.mdwSpinnerHiding === 'true') {
+          return;
+        }
+        spinner.classList.remove(CLASS_HIDDEN);
+        delete spinner.dataset.mdwSpinnerDelay;
+      }, SPINNER_DELAY);
+      spinner.dataset.mdwSpinnerDelay = String(delayId);
+    } else if (spinner.classList.contains(CLASS_HIDDEN)) {
+      const delayId = window.setTimeout(() => {
+        if (spinner.dataset.mdwSpinnerHiding === 'true') {
+          return;
+        }
+        spinner.classList.remove(CLASS_HIDDEN);
+        delete spinner.dataset.mdwSpinnerDelay;
+      }, SPINNER_DELAY);
+      spinner.dataset.mdwSpinnerDelay = String(delayId);
+    }
+    return spinner;
+  }
+
+  function hideSpinner(spinner, container) {
+    if (!spinner || spinner.dataset.mdwSpinnerHiding === 'true') {
+      return;
+    }
+    spinner.dataset.mdwSpinnerHiding = 'true';
+    const delayId = spinner.dataset.mdwSpinnerDelay;
+    if (delayId) {
+      window.clearTimeout(Number(delayId));
+      delete spinner.dataset.mdwSpinnerDelay;
+    }
+    const wasHidden = spinner.classList.contains(CLASS_HIDDEN);
+    spinner.classList.add(CLASS_HIDDEN);
+    if (wasHidden) {
+      spinner.remove();
+      if (container) {
+        container.removeAttribute('data-mdw-spinner-active');
+      }
+      return;
+    }
+    spinner.addEventListener('transitionend', () => {
+      spinner.remove();
+      if (container) {
+        container.removeAttribute('data-mdw-spinner-active');
+      }
+    }, { once: true });
+  }
+
+  function removeSpinner(container) {
+    const existing = container.querySelector(`.${CLASS_SPINNER}`);
+    if (existing) {
+      const delayId = existing.dataset.mdwSpinnerDelay;
+      if (delayId) {
+        window.clearTimeout(Number(delayId));
+        delete existing.dataset.mdwSpinnerDelay;
+      }
+      existing.remove();
+      container.removeAttribute('data-mdw-spinner-active');
+    }
+  }
+
+  function normalizeTargets(targets, container) {
+    if (Array.isArray(targets) && targets.length > 0) {
+      return targets.filter((target) => target instanceof HTMLImageElement);
+    }
+    return Array.from(container.querySelectorAll('img'));
+  }
+
+  function prepareImage(img) {
+    if (!(img instanceof HTMLImageElement)) {
+      return false;
+    }
+    if (img.dataset[DATA_READY] === 'true') {
+      return false;
+    }
+    img.classList.add(CLASS_TRANSITION);
+    img.classList.remove(CLASS_VISIBLE);
+    return true;
+  }
+
+  function revealImage(img) {
+    if (!(img instanceof HTMLImageElement)) {
+      return;
+    }
+    if (img.dataset[DATA_READY] === 'true') {
+      return;
+    }
+    requestAnimationFrame(() => {
+      img.classList.add(CLASS_VISIBLE);
+      img.dataset[DATA_READY] = 'true';
+    });
+  }
+
+  function attach(container, options = {}) {
+    if (!(container instanceof HTMLElement)) {
+      return null;
+    }
+
+    const images = normalizeTargets(options.targets, container);
+    images.forEach((img) => {
+      prepareImage(img);
+    });
+
+    if (images.length === 0) {
+      removeSpinner(container);
+      return null;
+    }
+
+    const spinner = ensureSpinner(container);
+    container.dataset.mdwSpinnerActive = 'true';
+    const total = images.length;
+    let settled = 0;
+
+    const markSettled = (img) => {
+      revealImage(img);
+      settled += 1;
+      if (settled >= total) {
+        hideSpinner(spinner, container);
+      }
+    };
+
+    images.forEach((img) => {
+      if (!(img instanceof HTMLImageElement)) {
+        markSettled();
+        return;
+      }
+      if (img.complete) {
+        markSettled(img);
+      } else {
+        img.addEventListener('load', () => markSettled(img), { once: true });
+        img.addEventListener('error', () => markSettled(img), { once: true });
+      }
+    });
+
+    if (settled >= total) {
+      hideSpinner(spinner, container);
+    }
+
+    return spinner;
+  }
+
+  function initAll(root = document) {
+    if (!root) {
+      return;
+    }
+    const targets = root.querySelectorAll('[data-mdw-media]');
+    targets.forEach((element) => {
+      attach(element);
+    });
+  }
+
+  window.MDWMediaLoader = {
+    attach,
+    initAll
+  };
+
+  document.addEventListener('DOMContentLoaded', () => {
+    initAll();
+  });
+})();
+
 // 言語切り替え時のトランジションを管理する即時実行関数
 (function () {
   const DEFAULT_DURATION = 320;
